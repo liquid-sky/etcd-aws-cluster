@@ -12,6 +12,7 @@ RUN apk --update add \
 
 COPY etcd-aws-cluster /etcd-aws-cluster
 COPY etcd-aws-proxy /etcd-aws-proxy
+COPY kubemaster-aws-proxy /kubemaster-aws-proxy
 
 #Expose directory to write output to
 VOLUME ["/etc/sysconfig/"]
