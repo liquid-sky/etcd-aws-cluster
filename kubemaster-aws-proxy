@@ -1,0 +1,38 @@
+#! /bin/bash
+# This script extracts private ipv4 from from /etc/environment
+# and uploads it to s3, where it will be downloaded and used by workers.
+
+pkg="kubemaster-aws-proxy"
+version="0.4"
+environment_file="/etc/sysconfig/environment"
+private_ipv4_file="/etc/sysconfig/private_ipv4"
+
+# Get S3 bucket url. Either pass in as S3BUCKET (e.g. s3://my-coreos-cluster-clountinit)
+# or generate one from AWS account name: s3://${account}-coreos-cluster-cloudinit.
+# initial-cluster file will be uploaded as S3BUCKET/etcd/initial-cluster.
+account=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq --raw-output .accountId)
+if [[ ! $account ]]; then
+    echo "$pkg: failed to get the aws account id."
+    exit 4
+fi
+discovery_bucket=${S3BUCKET:-"s3://${account}-coreos-cluster-cloudinit"}
+
+if [[ ! -f "$environment_file" ]]; then
+    echo "$pkg: $$environment_file doesn't exist."
+    exit 4
+else
+    if  private_ipv4=$(grep COREOS_PRIVATE_IPV4 $environment_file | cut -d'=' -f2) ;
+    then
+        echo $private_ipv4 > $private_ipv4_file
+    else
+        echo "$pkg: $$environment_file doesn't have COREOS_PRIVATE_IPV4."
+        exit 4
+    fi
+fi
+
+region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq --raw-output .region)
+if ! aws --region $region s3 ls $discovery_bucket > /dev/null 2>&1 ;
+then
+  aws --region $region s3 mb $discovery_bucket
+fi
+aws --region $region s3 cp $private_ipv4_file $discovery_bucket/kubemaster/$(basename $private_ipv4_file)
