@@ -48,7 +48,7 @@ Usage
 To create the etcd cluster:
 
 ```
-image=suet/etcd-aws-cluster
+image=liquid-sky/etcd-aws-cluster
 /usr/bin/docker pull $image
 /usr/bin/docker run -e REGION="us-west-2" -v /etc/sysconfig/:/etc/sysconfig/ $image /etcd-aws-cluster
 ```
@@ -56,6 +56,11 @@ To create the etcd proxy:
 ```
 /usr/bin/docker run -e ASGNAME="docker-etcd2" -e REGION="us-west-2" -v /etc/sysconfig/:/etc/sysconfig/ $image /etcd-aws-proxy
 ```
+To create kubernetes master proxy:
+```
+/usr/bin/docker run -e REGION="us-west-2" -v /etc/:/etc/sysconfig/ $image /kubemaster-aws-proxy
+```
+
 
 Reference
 -----
